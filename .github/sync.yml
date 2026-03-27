@@ -1,0 +1,35 @@
+group:
+  - repos: |
+      ImBit/Bits
+      ImBit/PacketNinja
+    files:
+      # ── Gradle Wrapper ─────────────────────────────────────────
+      - source: gradle/wrapper/gradle-wrapper.properties
+      - source: gradle/wrapper/gradle-wrapper.jar
+      - source: gradlew
+      - source: gradlew.bat
+      - source: gradle/libs.versions.toml
+      - source: template/gradle.properties.template
+        dest: gradle.properties
+        replace: false
+      - source: template/settings.gradle.kts.template
+        dest: settings.gradle.kts
+        replace: false
+      - source: template/build.gradle.kts.template
+        dest: build.gradle.kts
+        replace: false
+
+      # ── Git ────────────────────────────────────────────────────
+      - source: .gitignore
+      - source: .gitattributes
+
+      # ── IDE ────────────────────────────────────────────────────
+      - source: .idea/copyright
+      - source: .idea/codeStyles
+      - source: .idea/inspectionProfiles
+      - source: .editorconfig
+
+      # ── Misc ────────────────────────────────────────────────────
+      - source: LICENSE
+      - source: template/package-info.template
+      - source: libs

@@ -1,0 +1,9 @@
+plugins {
+    alias(libs.plugins.imbit.convention)
+}
+
+allprojects {
+    dependencies {
+        // Implement repo-specific dependencies here...
+    }
+}
