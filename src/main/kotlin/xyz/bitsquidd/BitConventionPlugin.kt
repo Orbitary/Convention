@@ -9,6 +9,8 @@ import org.gradle.api.plugins.JavaPluginExtension
 import org.gradle.api.publish.PublishingExtension
 import org.gradle.api.publish.maven.MavenPublication
 import org.gradle.api.tasks.compile.JavaCompile
+import org.gradle.api.tasks.javadoc.Javadoc
+import org.gradle.external.javadoc.StandardJavadocDocletOptions
 import org.gradle.jvm.tasks.Jar
 import org.gradle.jvm.toolchain.JavaLanguageVersion
 import org.gradle.kotlin.dsl.*
@@ -19,6 +21,8 @@ import xyz.bitsquidd.util.StandardDependencyConfig
 import xyz.bitsquidd.util.Util.library
 import xyz.bitsquidd.util.Util.libs
 import xyz.bitsquidd.util.Util.plugin
+import kotlin.text.get
+import kotlin.toString
 
 class BitConventionPlugin : Plugin<Project> {
     override fun apply(target: Project) {
@@ -78,10 +82,18 @@ class BitConventionPlugin : Plugin<Project> {
         extensions.configure<PublishingExtension> {
             publications {
                 create<MavenPublication>("maven") {
-                    artifact(tasks.named("shadowJar"))
-//                    artifact(tasks.named("sourcesJar"))
+                    groupId = project.group.toString()
+                    artifactId = project.name.lowercase()
+                    version = project.version.toString()
+
+                    from(components["java"])
                 }
             }
+        }
+
+        tasks.named<Javadoc>("javadoc") {
+            options.encoding = "UTF-8"
+            (options as StandardJavadocDocletOptions).addStringOption("Xdoclint:none", "-quiet")
         }
     }
 
@@ -98,6 +110,8 @@ class BitConventionPlugin : Plugin<Project> {
     private fun Project.configureExtensions() {
         extensions.configure<JavaPluginExtension> {
             disableAutoTargetJvm()
+            withSourcesJar()
+            withJavadocJar()
             toolchain.languageVersion.set(JavaLanguageVersion.of(BitVersions.JAVA))
         }
 
