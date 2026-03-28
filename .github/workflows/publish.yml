@@ -16,9 +16,14 @@ on:
     inputs:
       modules:
         description: >
-          Comma-separated list of Gradle submodule names to include as release artifacts.
-          Use "." for a single-module project.
+          List of Gradle submodule names to include as release artifacts. Use "." for a single-module project.
           Examples: "." | "API,Core,Server"
+        required: true
+        default: '.'
+        type: string
+  workflow_call:
+    inputs:
+      modules:
         required: true
         default: '.'
         type: string
