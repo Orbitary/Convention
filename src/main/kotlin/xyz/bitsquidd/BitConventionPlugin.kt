@@ -101,8 +101,10 @@ class BitConventionPlugin : Plugin<Project> {
         tasks.withType<JavaCompile>().configureEach { options.encoding = "UTF-8" }
 
         tasks.named<Jar>("jar") {
-            val customName = findProperty(ProjectProperty.CUSTOM_JAR_NAME.value) as String?
-            if (customName != null) archiveBaseName.set(customName)
+            val customJarName = findProperty(ProjectProperty.CUSTOM_JAR_NAME.value) as String?
+            if (customJarName != null) archiveBaseName.set(customJarName)
+            archiveVersion.set("")
+            archiveClassifier.set("")
             finalizedBy(tasks.named("shadowJar"))
         }
 
