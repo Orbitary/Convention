@@ -33,7 +33,7 @@ class BitConventionPlugin : Plugin<Project> {
             configurePlugins(libs)
             configureStandardDependencies(libs)
             configureErrorProne()
-            registerShadeConfiguration()
+            registerLibraryConfigurations()
         }
 
         // Configure extensions, dependencies, and tasks.
@@ -98,7 +98,10 @@ class BitConventionPlugin : Plugin<Project> {
     }
 
     private fun Project.configureTasks() {
-        tasks.withType<JavaCompile>().configureEach { options.encoding = "UTF-8" }
+        tasks.withType<JavaCompile>().configureEach {
+            options.encoding = "UTF-8"
+            options.compilerArgs.add("-XDaddTypeAnnotationsToSymbol=true")
+        }
 
         tasks.named<Jar>("jar") {
             val customJarName = findProperty(ProjectProperty.CUSTOM_JAR_NAME.value) as String?
@@ -118,17 +121,13 @@ class BitConventionPlugin : Plugin<Project> {
         }
     }
 
-    private fun Project.registerShadeConfiguration() {
+    private fun Project.registerLibraryConfigurations() {
         val shade = configurations.maybeCreate("shade")
-        configurations.getByName("api").extendsFrom(shade)
+        configurations.getByName("compileOnly").extendsFrom(shade)
         shade.isTransitive = false
 
         afterEvaluate {
             artifacts.add("shade", tasks.named("shadowJar"))
-        }
-
-        fun DependencyHandlerScope.shade(dependencyNotation: Any) {
-            add("shade", dependencyNotation)
         }
     }
 
@@ -185,10 +184,14 @@ class BitConventionPlugin : Plugin<Project> {
 
                 when (strategy) {
                     BuildStrategy.DEFAULT -> {
-                        configurations = listOf(shade)
+                        configurations = listOf(
+                            project.configurations.getByName("runtimeClasspath"),
+                            shade
+                        )
+                        /* Default shading - everything */
                     }
-                    BuildStrategy.FAT -> {
-                        /* Fat shading - everything */
+                    BuildStrategy.SPECIFIC -> {
+                        configurations = listOf(shade)
                     }
                 }
 
