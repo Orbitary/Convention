@@ -125,10 +125,6 @@ class BitConventionPlugin : Plugin<Project> {
         val shade = configurations.maybeCreate("shade")
         configurations.getByName("compileOnly").extendsFrom(shade)
         shade.isTransitive = false
-
-        afterEvaluate {
-            artifacts.add("shade", tasks.named("shadowJar"))
-        }
     }
 
     private fun Project.configureExtensions() {
