@@ -69,8 +69,8 @@ class BitConventionPlugin : Plugin<Project> {
     private fun Project.configurePlugins(libs: VersionCatalog) {
         pluginManager.apply("java-library")
         pluginManager.apply("maven-publish")
+//        pluginManager.apply(libs.plugin("kotlin"))
         pluginManager.apply(libs.plugin("shadow"))
-        pluginManager.apply(libs.plugin("kotlin"))
         pluginManager.apply(libs.plugin("errorprone"))
     }
 
@@ -108,11 +108,6 @@ class BitConventionPlugin : Plugin<Project> {
             if (customJarName != null) archiveBaseName.set(customJarName)
             archiveVersion.set("")
             archiveClassifier.set("")
-            finalizedBy(tasks.named("shadowJar"))
-        }
-
-        tasks.named("assemble") {
-            dependsOn(tasks.named("shadowJar"))
         }
 
         tasks.named<Javadoc>("javadoc") {
@@ -128,15 +123,19 @@ class BitConventionPlugin : Plugin<Project> {
     }
 
     private fun Project.configureExtensions() {
-        extensions.configure<JavaPluginExtension> {
-            disableAutoTargetJvm()
-            withSourcesJar()
-            withJavadocJar()
-            toolchain.languageVersion.set(JavaLanguageVersion.of(BitVersions.JAVA))
+        if (extensions.findByType(JavaPluginExtension::class) != null) {
+            extensions.configure<JavaPluginExtension> {
+                disableAutoTargetJvm()
+                withSourcesJar()
+                withJavadocJar()
+                toolchain.languageVersion.set(JavaLanguageVersion.of(BitVersions.JAVA))
+            }
         }
 
-        extensions.configure<KotlinJvmProjectExtension> {
-            jvmToolchain(BitVersions.JAVA)
+        if (extensions.findByType(KotlinJvmProjectExtension::class) != null) {
+            extensions.configure<KotlinJvmProjectExtension> {
+                jvmToolchain(BitVersions.JAVA)
+            }
         }
     }
 
@@ -169,6 +168,12 @@ class BitConventionPlugin : Plugin<Project> {
             ?.let { raw -> BuildStrategy.entries.firstOrNull { it.value == raw } }
             ?: BuildStrategy.DEFAULT
 
+        if (strategy == BuildStrategy.NONE) return;
+
+        tasks.named<Jar>("jar") {
+            finalizedBy(tasks.named("shadowJar"))
+        }
+
         val shade = configurations.maybeCreate("shade")
 
         plugins.withId(libs.plugin("shadow")) {
@@ -178,16 +183,17 @@ class BitConventionPlugin : Plugin<Project> {
                 archiveVersion.set("")
                 archiveClassifier.set("")
 
-                when (strategy) {
-                    BuildStrategy.DEFAULT -> {
-                        configurations = listOf(
+                configurations = when (strategy) {
+                    BuildStrategy.SPECIFIC -> {
+                        listOf(shade)
+                    }
+
+                    else -> {
+                        /* Default shading - everything */
+                        listOf(
                             project.configurations.getByName("runtimeClasspath"),
                             shade
                         )
-                        /* Default shading - everything */
-                    }
-                    BuildStrategy.SPECIFIC -> {
-                        configurations = listOf(shade)
                     }
                 }
 

@@ -11,7 +11,8 @@ enum class StandardDependencyConfig(val value: String) {
 
 enum class BuildStrategy(val value: String) {
     DEFAULT("DEFAULT"),
-    SPECIFIC("SPECIFIC")
+    SPECIFIC("SPECIFIC"),
+    NONE("NONE")
 }
 
 enum class CustomDependencyConfig(val value: String) {
