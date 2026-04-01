@@ -1,10 +1,10 @@
 plugins {
     `kotlin-dsl`
-    `maven-publish`
     `java-gradle-plugin`
+    id("com.gradle.plugin-publish") version "2.1.1"
 }
 
-group = "com.github.imbit"
+group = "xyz.bitsquidd"
 
 java {
     disableAutoTargetJvm()
@@ -33,24 +33,16 @@ dependencies {
 }
 
 gradlePlugin {
+    website.set("https://github.com/imbit/convention")
+    vcsUrl.set("https://github.com/imbit/convention")
+
     plugins {
-        create("bitConvention") {
-            id = "com.github.imbit.convention"
+        create("convention") {
+            id = "xyz.bitsquidd.convention"
             implementationClass = "xyz.bitsquidd.BitConventionPlugin"
             displayName = "ImBit Convention Plugin"
             description = "Shared build conventions for all ImBit projects"
-        }
-    }
-}
-
-publishing {
-    publications {
-        create<MavenPublication>("maven") {
-            groupId = project.group.toString()
-            artifactId = project.name.lowercase()
-            version = project.version.toString()
-
-            from(components["java"])
+            tags.set(listOf("convention", "kotlin"))
         }
     }
 }
