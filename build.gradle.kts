@@ -1,7 +1,7 @@
 plugins {
     `kotlin-dsl`
     `java-gradle-plugin`
-    id("com.gradle.plugin-publish") version "2.1.1"
+    `maven-publish`
 }
 
 group = "xyz.bitsquidd"
@@ -33,9 +33,6 @@ dependencies {
 }
 
 gradlePlugin {
-    website.set("https://github.com/imbit/convention")
-    vcsUrl.set("https://github.com/imbit/convention")
-
     plugins {
         create("convention") {
             id = "xyz.bitsquidd.convention"
@@ -43,6 +40,18 @@ gradlePlugin {
             displayName = "ImBit Convention Plugin"
             description = "Shared build conventions for all ImBit projects"
             tags.set(listOf("convention", "kotlin"))
+        }
+    }
+}
+
+publishing {
+    repositories {
+        maven {
+            url = uri("https://repo.bitsquidd.xyz/repository/bit/")
+            credentials {
+                username = System.getenv("BIT_REPO_USERNAME")
+                password = System.getenv("BIT_REPO_PASSWORD")
+            }
         }
     }
 }

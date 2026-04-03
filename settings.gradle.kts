@@ -5,4 +5,4 @@ pluginManagement {
     }
 }
 
-rootProject.name = "Convention"
+rootProject.name = "convention"

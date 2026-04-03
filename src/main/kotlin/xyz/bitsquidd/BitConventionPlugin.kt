@@ -11,12 +11,9 @@ import org.gradle.api.publish.maven.MavenPublication
 import org.gradle.api.tasks.compile.JavaCompile
 import org.gradle.api.tasks.javadoc.Javadoc
 import org.gradle.external.javadoc.StandardJavadocDocletOptions
-import org.gradle.jvm.tasks.Jar
 import org.gradle.jvm.toolchain.JavaLanguageVersion
 import org.gradle.kotlin.dsl.*
 import org.jetbrains.kotlin.gradle.dsl.KotlinJvmProjectExtension
-import xyz.bitsquidd.util.BuildStrategy
-import xyz.bitsquidd.util.ProjectProperty
 import xyz.bitsquidd.util.CustomDependencyConfig
 import xyz.bitsquidd.util.StandardDependencyConfig
 import xyz.bitsquidd.util.Util.library
@@ -33,7 +30,7 @@ class BitConventionPlugin : Plugin<Project> {
             configurePlugins(libs)
             configureStandardDependencies(libs)
             configureErrorProne()
-            registerLibraryConfigurations()
+            configureShadowJar(libs)
         }
 
         // Configure extensions, dependencies, and tasks.
@@ -42,7 +39,6 @@ class BitConventionPlugin : Plugin<Project> {
         target.subprojects {
             configureExtensions()
             configureTasks()
-            configureShadowJar(libs)
             configurePublishing()
         }
 
@@ -103,23 +99,10 @@ class BitConventionPlugin : Plugin<Project> {
             options.compilerArgs.add("-XDaddTypeAnnotationsToSymbol=true")
         }
 
-        tasks.named<Jar>("jar") {
-            val customJarName = findProperty(ProjectProperty.CUSTOM_JAR_NAME.value) as String?
-            if (customJarName != null) archiveBaseName.set(customJarName)
-            archiveVersion.set("")
-            archiveClassifier.set("")
-        }
-
         tasks.named<Javadoc>("javadoc") {
             options.encoding = "UTF-8"
             (options as StandardJavadocDocletOptions).addStringOption("Xdoclint:none", "-quiet")
         }
-    }
-
-    private fun Project.registerLibraryConfigurations() {
-        val shade = configurations.maybeCreate("shade")
-        configurations.getByName("compileOnly").extendsFrom(shade)
-        shade.isTransitive = false
     }
 
     private fun Project.configureExtensions() {
@@ -163,45 +146,24 @@ class BitConventionPlugin : Plugin<Project> {
 
 
     private fun Project.configureShadowJar(libs: VersionCatalog) {
-        val strategy = (findProperty(ProjectProperty.BUILD_STRATEGY.value) as String?)
-            ?.uppercase()
-            ?.let { raw -> BuildStrategy.entries.firstOrNull { it.value == raw } }
-            ?: BuildStrategy.DEFAULT
-
-        if (strategy == BuildStrategy.NONE) return;
-
-        tasks.named<Jar>("jar") {
-            finalizedBy(tasks.named("shadowJar"))
+        tasks {
+            named("jar") { enabled = false }
+            named("assemble") { dependsOn(named("shadowJar")) }
         }
 
         val shade = configurations.maybeCreate("shade")
+        configurations.getByName("compileOnly").extendsFrom(shade)
+        shade.isTransitive = false
 
         plugins.withId(libs.plugin("shadow")) {
             tasks.withType<ShadowJar>().configureEach {
-                val customJarName = findProperty(ProjectProperty.CUSTOM_JAR_NAME.value) as String?
-                if (customJarName != null) archiveBaseName.set(customJarName)
+                configurations = listOf(project.configurations.getByName("shade"))
                 archiveVersion.set("")
                 archiveClassifier.set("")
-
-                configurations = when (strategy) {
-                    BuildStrategy.SPECIFIC -> {
-                        listOf(shade)
-                    }
-
-                    else -> {
-                        /* Default shading - everything */
-                        listOf(
-                            project.configurations.getByName("runtimeClasspath"),
-                            shade
-                        )
-                    }
-                }
-
                 manifest { attributes["Implementation-Version"] = version }
             }
         }
     }
-
 
     private fun Project.configureStandardDependencies(libs: VersionCatalog) {
         dependencies {
