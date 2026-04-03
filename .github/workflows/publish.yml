@@ -6,8 +6,8 @@ permissions:
 env:
   CHANGELOG_CATEGORIES: |
     ### ✨ Features|✨,:sparkles:,🚀,:rocket:
-    ### 🐛 Bug Fixes|🐛,:bug:,🚑️,:ambulance:
     ### 🎨 Refinement|🎨,:art:,♻️,:recycle:
+    ### 🐛 Bug Fixes|🐛,:bug:,🚑️,:ambulance:
     ### 🔒 Security|🔒,:lock:
     ### 📖 Documentation|📖,:book:,📝,:memo:
 
@@ -127,7 +127,7 @@ jobs:
             
               OTHER=$(grep -vE "(${ALL_MAPPED}|^Merge)" all_commits.txt || true)
               if [ -n "$OTHER" ]; then
-                echo "### 📦 Other Changes" >> changelog.md
+                echo "### 🦑 Other Changes" >> changelog.md
                 echo "$OTHER" | sed 's/^/- /' >> changelog.md
                 echo "" >> changelog.md
               fi
@@ -173,6 +173,12 @@ jobs:
               echo "EOF"
             } >> $GITHUB_OUTPUT
 
+      -   name: Publish to Maven Repository
+          run: ./gradlew publish
+          env:
+            MAVEN_USERNAME: ${{ secrets.MAVEN_USERNAME }}
+            MAVEN_PASSWORD: ${{ secrets.MAVEN_PASSWORD }}
+
       -   name: Create GitHub Release
           uses: softprops/action-gh-release@v2
           with:
@@ -190,9 +196,7 @@ jobs:
       -   name: Update README version
           run: |
             VERSION="${{ env.VERSION }}"
-            # Maven:  <version>x.y.z</version>
             sed -i "s/<version>[0-9.]\+<\/version>/<version>$VERSION<\/version>/g" README.md
-            # Gradle:  group:artifact:x.y.z
             sed -i "s/\(:[A-Za-z]\+:\)[0-9.]\+/\1$VERSION/g" README.md
 
       -   name: Bump patch version
