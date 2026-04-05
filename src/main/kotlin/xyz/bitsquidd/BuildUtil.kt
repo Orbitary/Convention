@@ -7,16 +7,44 @@ import org.gradle.api.tasks.TaskProvider
 import java.io.File
 
 object BuildUtil {
-    fun Project.registerStandardiseDirectories(): TaskProvider<Task> =
+    fun Project.standardiseDirectories() {
+        allprojects {
+            registerRegularStandardisation()
+            tasks.matching { it.name in listOf("compileJava", "compileKotlin") }.configureEach {
+                dependsOn("standardiseDirectories")
+            }
+        }
+
+        afterEvaluate {
+            tasks.register("standardiseAllDirectories") {
+                group = "bit"
+                description = "Standardises directories for all subprojects."
+                dependsOn(
+                    subprojects
+                        .filter { it.tasks.findByName("standardiseDirectories") != null }
+                        .map { it.tasks.named("standardiseDirectories") }
+                )
+            }
+        }
+    }
+
+
+    private fun Project.registerRegularStandardisation(): TaskProvider<Task> =
         tasks.register("standardiseDirectories") {
-            group = "build"
+            group = "bit"
             description = "Generates package-info.java and cleans up directories for all Java packages."
 
             val srcDir = project.file("src/main/java")
             val templateFile = rootProject.file("template/package-info.template")
 
-            if (!srcDir.exists()) return@register
-            if (templateFile.exists()) return@register
+            if (!srcDir.exists()) {
+                project.logger.warn("Source directory 'src/main/java' not found! Skipping package-info generation.")
+                return@register
+            }
+            if (!templateFile.exists()) {
+                project.logger.warn("Template file 'template/package-info.template' not found! Skipping package-info generation.")
+                return@register
+            }
 
             inputs.dir(srcDir).optional(true)
             inputs.file(templateFile).optional(true)
@@ -29,7 +57,7 @@ object BuildUtil {
             }
         }
 
-    fun createPackageInfo(root: File, templateFile: File) {
+    private fun createPackageInfo(root: File, templateFile: File) {
         if (!templateFile.exists()) throw GradleException("Template file 'template/package-info.template' not found!")
         val template = templateFile.readText()
 
@@ -57,7 +85,7 @@ object BuildUtil {
             }
     }
 
-    fun deleteEmptyDirs(root: File) {
+    private fun deleteEmptyDirs(root: File) {
         if (!root.exists() || !root.isDirectory) return
         root.walkBottomUp()
             .filter { it.isDirectory && it != root }

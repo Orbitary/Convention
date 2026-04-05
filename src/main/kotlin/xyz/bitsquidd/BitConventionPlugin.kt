@@ -14,6 +14,7 @@ import org.gradle.external.javadoc.StandardJavadocDocletOptions
 import org.gradle.jvm.toolchain.JavaLanguageVersion
 import org.gradle.kotlin.dsl.*
 import org.jetbrains.kotlin.gradle.dsl.KotlinJvmProjectExtension
+import xyz.bitsquidd.BuildUtil.standardiseDirectories
 import xyz.bitsquidd.util.CustomDependencyConfig
 import xyz.bitsquidd.util.StandardDependencyConfig
 import xyz.bitsquidd.util.Util.library
@@ -42,23 +43,8 @@ class BitConventionPlugin : Plugin<Project> {
             configurePublishing()
         }
 
-        // ROOT ONLY - directory standardisation aggregator
-        with(BuildUtil) { target.registerStandardiseDirectories() }
-        target.afterEvaluate {
-            tasks.matching { it.name in listOf("compileJava", "compileKotlin") }.configureEach {
-                dependsOn("standardiseDirectories")
-            }
-            // If this is the ROOT project, register the aggregator task that depends on ALL subproject standardiseDirectories tasks.
-            tasks.register("standardiseAllDirectories") {
-                group = "build"
-                description = "Standardises directories for all subprojects."
-                dependsOn(
-                    target.subprojects
-                        .filter { it.tasks.findByName("standardiseDirectories") != null }
-                        .map { it.tasks.named("standardiseDirectories") }
-                )
-            }
-        }
+        // ROOT ONLY - directory standardisation
+        target.standardiseDirectories()
     }
 
 
