@@ -1,10 +1,10 @@
 package xyz.bitsquidd
 
 import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
+import net.ltgt.gradle.errorprone.CheckSeverity
 import net.ltgt.gradle.errorprone.errorprone
 import org.gradle.api.Plugin
 import org.gradle.api.Project
-import org.gradle.api.artifacts.VersionCatalog
 import org.gradle.api.plugins.JavaPluginExtension
 import org.gradle.api.publish.PublishingExtension
 import org.gradle.api.publish.maven.MavenPublication
@@ -17,21 +17,28 @@ import org.jetbrains.kotlin.gradle.dsl.KotlinJvmProjectExtension
 import xyz.bitsquidd.BuildUtil.standardiseDirectories
 import xyz.bitsquidd.util.CustomDependencyConfig
 import xyz.bitsquidd.util.StandardDependencyConfig
-import xyz.bitsquidd.util.Util.library
 import xyz.bitsquidd.util.Util.libs
-import xyz.bitsquidd.util.Util.plugin
 
 class BitConventionPlugin : Plugin<Project> {
+    companion object {
+        private const val ERROR_PRONE = "com.google.errorprone:error_prone_core:2.48.0"
+        private const val NULLAWAY = "com.uber.nullaway:nullaway:0.13.1"
+        private const val JB_ANNOTATIONS = "org.jetbrains:annotations:26.1.0"
+
+        private const val PLUGIN_SHADOW = "com.gradleup.shadow"
+        private const val PLUGIN_ERRORPRONE = "net.ltgt.errorprone"
+    }
+
     override fun apply(target: Project) {
         val libs = target.libs()
 
         // ALLPROJECTS - repos only
         target.allprojects {
             // Configure plugins first.
-            configurePlugins(libs)
-            configureStandardDependencies(libs)
+            configurePlugins()
+            configureStandardDependencies()
             configureErrorProne()
-            configureShadowJar(libs)
+            configureShadowJar()
         }
 
         // Configure extensions, dependencies, and tasks.
@@ -48,12 +55,12 @@ class BitConventionPlugin : Plugin<Project> {
     }
 
 
-    private fun Project.configurePlugins(libs: VersionCatalog) {
+    private fun Project.configurePlugins() {
         pluginManager.apply("java-library")
         pluginManager.apply("maven-publish")
 //        pluginManager.apply(libs.plugin("kotlin"))
-        pluginManager.apply(libs.plugin("shadow"))
-        pluginManager.apply(libs.plugin("errorprone"))
+        pluginManager.apply(PLUGIN_SHADOW)
+        pluginManager.apply(PLUGIN_ERRORPRONE)
     }
 
 
@@ -116,6 +123,13 @@ class BitConventionPlugin : Plugin<Project> {
                 enabled.set(true)
                 disableWarningsInGeneratedCode.set(true)
                 disableAllWarnings.set(true)
+
+                check("NullAway", CheckSeverity.ERROR)
+                option("NullAway:AnnotatedPackages", findProperty("nullaway.annotatedPackages") as String)
+                option("NullAway:ExternalInitAnnotations", "org.jetbrains.annotations.NotNullByDefault")
+                option("NullAway:NonnullAnnotations", "org.jetbrains.annotations.NotNull")
+                option("NullAway:NullableAnnotations", "org.jetbrains.annotations.Nullable")
+
                 errorproneArgs.addAll(
                     "-Xep:CollectionIncompatibleType:ERROR",
                     "-Xep:EqualsIncompatibleType:ERROR",
@@ -131,7 +145,7 @@ class BitConventionPlugin : Plugin<Project> {
     }
 
 
-    private fun Project.configureShadowJar(libs: VersionCatalog) {
+    private fun Project.configureShadowJar() {
         tasks {
             named("jar") { enabled = false }
             named("assemble") { dependsOn(named("shadowJar")) }
@@ -142,7 +156,7 @@ class BitConventionPlugin : Plugin<Project> {
         configurations.getByName("compileOnly").extendsFrom(shade)
         shade.isTransitive = false
 
-        plugins.withId(libs.plugin("shadow")) {
+        plugins.withId(PLUGIN_SHADOW) {
             tasks.withType<ShadowJar>().configureEach {
                 configurations = listOf(project.configurations.getByName("shade_internal"))
                 archiveVersion.set("")
@@ -152,10 +166,12 @@ class BitConventionPlugin : Plugin<Project> {
         }
     }
 
-    private fun Project.configureStandardDependencies(libs: VersionCatalog) {
+    private fun Project.configureStandardDependencies() {
         dependencies {
-            add(CustomDependencyConfig.ERROR_PRONE.value, libs.library("errorprone"))
-            add(StandardDependencyConfig.COMPILE_ONLY.value, libs.library("jb.annotations"))
+            add(CustomDependencyConfig.ERROR_PRONE.value, ERROR_PRONE)
+            add(CustomDependencyConfig.ERROR_PRONE.value, NULLAWAY)
+
+            add(StandardDependencyConfig.COMPILE_ONLY.value, JB_ANNOTATIONS)
         }
     }
 
