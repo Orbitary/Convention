@@ -30,6 +30,7 @@ fun DependencyHandlerScope.shade(target: Any) {
         is ProjectDependency -> {
             add("shade_internal", project(mapOf("path" to target.path, "configuration" to "shadow")))
         }
+
         else -> {
             add("shade_internal", target)
         }
@@ -41,7 +42,12 @@ fun DependencyHandlerScope.includeLibrary(target: Any) {
     add("implementation", target)
 }
 
-fun DependencyHandlerScope.shadeApi(target: Any) {
+fun DependencyHandlerScope.shadeLibrary(target: Any) {
     shade(target)
     includeLibrary(target)
+}
+
+fun DependencyHandlerScope.shadeImplementation(target: Any) {
+    shade(target)
+    add("implementation", target)
 }
