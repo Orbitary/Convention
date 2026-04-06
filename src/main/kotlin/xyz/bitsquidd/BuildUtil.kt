@@ -7,10 +7,12 @@ import org.gradle.api.tasks.TaskProvider
 import java.io.File
 
 object BuildUtil {
+    private val STANDARD_TASKS = setOf("compileJava", "compileKotlin", "shadowJar", "sourcesJar", "javadoc", "processResources")
+
     fun Project.standardiseDirectories() {
         allprojects {
             registerRegularStandardisation()
-            tasks.matching { it.name in listOf("compileJava", "compileKotlin") }.configureEach {
+            tasks.matching { it.name in STANDARD_TASKS }.configureEach {
                 dependsOn("standardiseDirectories")
             }
         }
@@ -38,11 +40,11 @@ object BuildUtil {
             val templateFile = rootProject.file("template/package-info.template")
 
             if (!srcDir.exists()) {
-                project.logger.warn("Source directory 'src/main/java' not found! Skipping package-info generation.")
+                project.logger.warn("Source directory 'src/main/java' not found in module:'${project.name}'. Skipping package-info generation.")
                 return@register
             }
             if (!templateFile.exists()) {
-                project.logger.warn("Template file 'template/package-info.template' not found! Skipping package-info generation.")
+                project.logger.warn("Template file 'template/package-info.template' not found in module:'${project.name}'. Skipping package-info generation.")
                 return@register
             }
 
