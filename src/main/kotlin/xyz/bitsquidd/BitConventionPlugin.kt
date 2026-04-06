@@ -16,6 +16,7 @@ import org.gradle.kotlin.dsl.*
 import org.jetbrains.kotlin.gradle.dsl.KotlinJvmProjectExtension
 import xyz.bitsquidd.BuildUtil.standardiseDirectories
 import xyz.bitsquidd.util.CustomDependencyConfig
+import xyz.bitsquidd.util.ProjectProperty
 import xyz.bitsquidd.util.StandardDependencyConfig
 import xyz.bitsquidd.util.Util.libs
 
@@ -124,7 +125,7 @@ class BitConventionPlugin : Plugin<Project> {
                 disableWarningsInGeneratedCode.set(true)
                 disableAllWarnings.set(true)
 
-                findProperty("nullaway.annotatedPackages")?.let {
+                findProperty(ProjectProperty.NULLAWAY_DIRECTORY.value)?.let {
                     check("NullAway", CheckSeverity.ERROR)
                     option("NullAway:AnnotatedPackages", it as String)
                     option("NullAway:ExternalInitAnnotations", "org.jetbrains.annotations.NotNullByDefault")
@@ -164,6 +165,11 @@ class BitConventionPlugin : Plugin<Project> {
                 archiveVersion.set("")
                 archiveClassifier.set("")
                 manifest { attributes["Implementation-Version"] = version }
+
+                findProperty(ProjectProperty.CUSTOM_JAR_NAME.value)?.let {
+                    val customName = it as String
+                    if (customName.isNotBlank()) archiveBaseName.set(customName)
+                }
             }
         }
     }

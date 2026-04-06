@@ -21,5 +21,5 @@ enum class CustomDependencyConfig(val value: String) {
 
 enum class ProjectProperty(val value: String) {
     CUSTOM_JAR_NAME("bit_customJarName"),
-    BUILD_STRATEGY("bit_buildStrategy")
+    NULLAWAY_DIRECTORY("nullaway.annotatedPackages")
 }
