@@ -124,11 +124,13 @@ class BitConventionPlugin : Plugin<Project> {
                 disableWarningsInGeneratedCode.set(true)
                 disableAllWarnings.set(true)
 
-                check("NullAway", CheckSeverity.ERROR)
-                option("NullAway:AnnotatedPackages", findProperty("nullaway.annotatedPackages") as String)
-                option("NullAway:ExternalInitAnnotations", "org.jetbrains.annotations.NotNullByDefault")
-                option("NullAway:NonnullAnnotations", "org.jetbrains.annotations.NotNull")
-                option("NullAway:NullableAnnotations", "org.jetbrains.annotations.Nullable")
+                findProperty("nullaway.annotatedPackages")?.let {
+                    check("NullAway", CheckSeverity.ERROR)
+                    option("NullAway:AnnotatedPackages", it as String)
+                    option("NullAway:ExternalInitAnnotations", "org.jetbrains.annotations.NotNullByDefault")
+                    option("NullAway:NonnullAnnotations", "org.jetbrains.annotations.NotNull")
+                    option("NullAway:NullableAnnotations", "org.jetbrains.annotations.Nullable")
+                }
 
                 errorproneArgs.addAll(
                     "-Xep:CollectionIncompatibleType:ERROR",
