@@ -21,5 +21,6 @@ enum class CustomDependencyConfig(val value: String) {
 
 enum class ProjectProperty(val value: String) {
     CUSTOM_JAR_NAME("bit_customJarName"),
+    DO_SHADING("bit_doShading"),
     NULLAWAY_DIRECTORY("nullaway.annotatedPackages"),
 }

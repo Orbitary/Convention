@@ -11,9 +11,7 @@ import org.gradle.api.publish.maven.MavenPublication
 import org.gradle.api.tasks.compile.JavaCompile
 import org.gradle.api.tasks.javadoc.Javadoc
 import org.gradle.external.javadoc.StandardJavadocDocletOptions
-import org.gradle.jvm.toolchain.JavaLanguageVersion
 import org.gradle.kotlin.dsl.*
-import org.jetbrains.kotlin.gradle.dsl.KotlinJvmProjectExtension
 import xyz.bitsquidd.BuildUtil.standardiseDirectories
 import xyz.bitsquidd.util.CustomDependencyConfig
 import xyz.bitsquidd.util.ProjectProperty
@@ -78,9 +76,7 @@ class BitConventionPlugin : Plugin<Project> {
                         artifactId = project.name.lowercase()
                         version = project.version.toString()
 
-                        artifact(tasks.named("shadowJar"))
-                        artifact(tasks.named("sourcesJar"))
-                        artifact(tasks.named("javadocJar"))
+                        from(components["java"])
                     }
                 }
             }
@@ -144,12 +140,18 @@ class BitConventionPlugin : Plugin<Project> {
     private fun Project.configureShadowJar() {
         val shade = configurations.maybeCreate("shade_internal")
 
+        val shadowPluginApplied = findProperty(ProjectProperty.DO_SHADING.value)?.toString()?.toBoolean() ?: true
+        if (!shadowPluginApplied) return
+
+        tasks {
+            named("jar") { enabled = false }
+            named("assemble") { dependsOn(named("shadowJar")) }
+        }
+
         configurations.getByName("compileOnly").extendsFrom(shade)
 
         plugins.withId(PLUGIN_SHADOW) {
-            val jarTask = tasks.named("jar")
             tasks.withType<ShadowJar>().configureEach {
-                dependsOn(jarTask)
                 configurations = listOf(project.configurations.getByName("shade_internal"))
                 archiveVersion.set("")
                 archiveClassifier.set("")
