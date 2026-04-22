@@ -27,34 +27,7 @@ fun Project.relocate(vararg pairs: Pair<String, String>) {
     }
 }
 
-fun DependencyHandlerScope.shade(target: Any, includeTransitive: Boolean = false) {
-    when (target) {
-        is ProjectDependency -> {
-            if (includeTransitive) {
-                add("shade_internal", project(mapOf("path" to target.path)))
-            } else {
-                add("shade_internal", project(mapOf("path" to target.path, "configuration" to "shadow")))
-            }
-        } else -> {
-            val resolved = if (target is Provider<*>) target.get() else target
-            val dep = add("shade_internal", resolved)
-            if (!includeTransitive) (dep as? ModuleDependency)?.isTransitive = false
-        }
-    }
-}
-
-fun DependencyHandlerScope.includeLibrary(target: Any) {
+fun DependencyHandlerScope.providedApi(target: Any) {
     add("api", target)
-    add("implementation", target)
-}
-
-fun DependencyHandlerScope.shadeLibrary(target: Any, includeTransitive: Boolean = false) {
-    shade(target, includeTransitive)
-    includeLibrary(target)
-}
-
-fun DependencyHandlerScope.shadeImplementation(target: Any, includeTransitive: Boolean = false) {
-    shade(target, includeTransitive)
-    val dep = add("implementation", target)
-    if (!includeTransitive) (dep as? ModuleDependency)?.isTransitive = false
+    add("shadow", target)
 }
