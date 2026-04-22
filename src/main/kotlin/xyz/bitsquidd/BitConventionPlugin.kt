@@ -1,11 +1,11 @@
 package xyz.bitsquidd
 
-import com.github.jengelman.gradle.plugins.shadow.ShadowExtension
 import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
 import net.ltgt.gradle.errorprone.CheckSeverity
 import net.ltgt.gradle.errorprone.errorprone
 import org.gradle.api.Plugin
 import org.gradle.api.Project
+import org.gradle.api.artifacts.ProjectDependency
 import org.gradle.api.plugins.JavaPluginExtension
 import org.gradle.api.publish.PublishingExtension
 import org.gradle.api.publish.maven.MavenPublication
@@ -14,6 +14,7 @@ import org.gradle.api.tasks.javadoc.Javadoc
 import org.gradle.external.javadoc.StandardJavadocDocletOptions
 import org.gradle.jvm.tasks.Jar
 import org.gradle.kotlin.dsl.*
+import org.gradle.language.assembler.tasks.Assemble
 import xyz.bitsquidd.BuildUtil.standardiseDirectories
 import xyz.bitsquidd.util.CustomDependencyConfig
 import xyz.bitsquidd.util.ProjectProperty
@@ -140,19 +141,25 @@ class BitConventionPlugin : Plugin<Project> {
 
 
     private fun Project.configureShadowJar() {
-        configurations {
-            create("shade_internal") {
-                isCanBeConsumed = false
-                isCanBeResolved = true
-            }
+        val shadeTransitive = configurations.maybeCreate("shade_internal_transitive")
+        shadeTransitive.isTransitive = true
+        val shadeNonTransitive = configurations.maybeCreate("shade_internal")
+        shadeNonTransitive.isTransitive = false
+
+        configurations.getByName("implementation").extendsFrom(shadeTransitive, shadeNonTransitive)
+
+        tasks {
+            named("assemble") { dependsOn("shadowJar") }
+            named<Jar>("jar") { archiveClassifier = "ignored" }
         }
 
         plugins.withId(PLUGIN_SHADOW) {
             tasks.withType<ShadowJar>().configureEach {
+                configurations = listOf(shadeTransitive, shadeNonTransitive)
+
                 archiveVersion.set("")
-                archiveClassifier.set("fat")
+                archiveClassifier.set("") //fat
                 manifest { attributes["Implementation-Version"] = version }
-                configurations = listOf(project.configurations["shade_internal"])
 
                 property(ProjectProperty.CustomJarName).let {
                     if (it.isNotBlank()) archiveBaseName.set(it)
@@ -160,15 +167,15 @@ class BitConventionPlugin : Plugin<Project> {
             }
         }
 
-        tasks.named<Jar>("jar") {
-            archiveVersion.set("")
-            archiveClassifier.set("") // No classifier for the normal jar.
-            manifest { attributes["Implementation-Version"] = version }
-
-            property(ProjectProperty.CustomJarName).let {
-                if (it.isNotBlank()) archiveBaseName.set(it)
-            }
-        }
+//        tasks.named<Jar>("jar") {
+//            archiveVersion.set("")
+//            archiveClassifier.set("") // No classifier for the normal jar.
+//            manifest { attributes["Implementation-Version"] = version }
+//
+//            property(ProjectProperty.CustomJarName).let {
+//                if (it.isNotBlank()) archiveBaseName.set(it)
+//            }
+//        }
     }
 
     private fun Project.configureStandardDependencies() {
