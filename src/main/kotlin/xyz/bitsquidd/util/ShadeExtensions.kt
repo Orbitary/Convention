@@ -11,6 +11,7 @@ import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
 import org.gradle.api.Project
 import org.gradle.api.artifacts.ModuleDependency
 import org.gradle.api.artifacts.ProjectDependency
+import org.gradle.api.provider.Provider
 import org.gradle.kotlin.dsl.DependencyHandlerScope
 import org.gradle.kotlin.dsl.withType
 
@@ -35,7 +36,8 @@ fun DependencyHandlerScope.shade(target: Any, includeTransitive: Boolean = false
                 add("shade_internal", project(mapOf("path" to target.path, "configuration" to "shadow")))
             }
         } else -> {
-            val dep = add("shade_internal", target)
+            val resolved = if (target is Provider<*>) target.get() else target
+            val dep = add("shade_internal", resolved)
             if (!includeTransitive) (dep as? ModuleDependency)?.isTransitive = false
         }
     }
@@ -53,5 +55,6 @@ fun DependencyHandlerScope.shadeLibrary(target: Any, includeTransitive: Boolean 
 
 fun DependencyHandlerScope.shadeImplementation(target: Any, includeTransitive: Boolean = false) {
     shade(target, includeTransitive)
-    add("implementation", target)
+    val dep = add("implementation", target)
+    if (!includeTransitive) (dep as? ModuleDependency)?.isTransitive = false
 }
