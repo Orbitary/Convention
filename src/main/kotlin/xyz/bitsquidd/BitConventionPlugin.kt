@@ -12,6 +12,7 @@ import org.gradle.api.publish.maven.MavenPublication
 import org.gradle.api.tasks.compile.JavaCompile
 import org.gradle.api.tasks.javadoc.Javadoc
 import org.gradle.external.javadoc.StandardJavadocDocletOptions
+import org.gradle.jvm.tasks.Jar
 import org.gradle.kotlin.dsl.*
 import xyz.bitsquidd.BuildUtil.standardiseDirectories
 import xyz.bitsquidd.util.CustomDependencyConfig
@@ -77,11 +78,7 @@ class BitConventionPlugin : Plugin<Project> {
                         artifactId = project.name.lowercase()
                         version = project.version.toString()
 
-                        if (property(ProjectProperty.DoShading)) {
-                            project.extensions.getByType<ShadowExtension>().let { from(components["shadow"]) }
-                        } else {
-                            from(components["java"])
-                        }
+                        from(components["java"])
                     }
                 }
             }
@@ -143,22 +140,33 @@ class BitConventionPlugin : Plugin<Project> {
 
 
     private fun Project.configureShadowJar() {
-        if (!property(ProjectProperty.DoShading)) return
-
-        tasks {
-            // We don't disable jar, Shadow needs it for project deps
-            named("assemble") { dependsOn(named("shadowJar")) }
+        configurations {
+            create("shade_internal") {
+                isCanBeConsumed = false
+                isCanBeResolved = true
+            }
         }
 
         plugins.withId(PLUGIN_SHADOW) {
             tasks.withType<ShadowJar>().configureEach {
                 archiveVersion.set("")
-                archiveClassifier.set("")
+                archiveClassifier.set("fat")
                 manifest { attributes["Implementation-Version"] = version }
+                configurations = listOf(project.configurations["shade_internal"])
 
                 property(ProjectProperty.CustomJarName).let {
                     if (it.isNotBlank()) archiveBaseName.set(it)
                 }
+            }
+        }
+
+        tasks.named<Jar>("jar") {
+            archiveVersion.set("")
+            archiveClassifier.set("") // No classifier for the normal jar.
+            manifest { attributes["Implementation-Version"] = version }
+
+            property(ProjectProperty.CustomJarName).let {
+                if (it.isNotBlank()) archiveBaseName.set(it)
             }
         }
     }

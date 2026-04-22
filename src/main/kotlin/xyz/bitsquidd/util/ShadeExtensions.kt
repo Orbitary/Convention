@@ -31,3 +31,7 @@ fun DependencyHandlerScope.providedApi(target: Any) {
     add("api", target)
     add("shadow", target)
 }
+
+fun DependencyHandlerScope.shade(target: Any) {
+    add("shade_internal", target)
+}
