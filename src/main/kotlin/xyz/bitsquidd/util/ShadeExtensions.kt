@@ -14,6 +14,7 @@ import org.gradle.api.artifacts.ModuleDependency
 import org.gradle.api.artifacts.ProjectDependency
 import org.gradle.api.provider.Provider
 import org.gradle.kotlin.dsl.DependencyHandlerScope
+import org.gradle.kotlin.dsl.dependencies
 import org.gradle.kotlin.dsl.withType
 import java.util.logging.Logger
 
@@ -29,9 +30,12 @@ fun Project.relocate(vararg pairs: Pair<String, String>) {
     }
 }
 
-fun DependencyHandlerScope.providedApi(target: Any) {
-    add("api", target)
-    add("shadow", target)
+fun Project.providedApi(target: Any) {
+    allprojects {
+        dependencies {
+            add("compileOnly", target)
+        }
+    }
 }
 
 fun DependencyHandlerScope.shade(target: Any, transitive: Boolean = false) {
