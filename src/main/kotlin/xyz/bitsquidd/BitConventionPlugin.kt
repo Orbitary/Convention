@@ -6,6 +6,7 @@ import net.ltgt.gradle.errorprone.errorprone
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.artifacts.ProjectDependency
+import org.gradle.api.file.DuplicatesStrategy
 import org.gradle.api.plugins.JavaPluginExtension
 import org.gradle.api.publish.PublishingExtension
 import org.gradle.api.publish.maven.MavenPublication
@@ -165,6 +166,10 @@ class BitConventionPlugin : Plugin<Project> {
 
                     property(ProjectProperty.CustomJarName).let {
                         if (it.isNotBlank()) archiveBaseName.set(it)
+                    }
+
+                    mergeServiceFiles {
+                        duplicatesStrategy = DuplicatesStrategy.INCLUDE
                     }
 
                     dependencies {
