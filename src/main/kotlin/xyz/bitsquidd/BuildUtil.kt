@@ -62,6 +62,8 @@ object BuildUtil {
     private fun createPackageInfo(root: File, templateFile: File) {
         if (!templateFile.exists()) throw GradleException("Template file 'template/package-info.template' not found!")
         val template = templateFile.readText()
+            .replace("\r\n", "\n")
+            .replace('\r', '\n')
 
         root.walkTopDown()
             .filter { it.isDirectory && it != root }
