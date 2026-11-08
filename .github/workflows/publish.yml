@@ -199,8 +199,8 @@ jobs:
       - name: Publish to Maven Repository
         run: ./gradlew publish
         env:
-          MAVEN_USERNAME: ${{ secrets.MAVEN_USERNAME }}
-          MAVEN_PASSWORD: ${{ secrets.MAVEN_PASSWORD }}
+          MAVEN_USERNAME: ${{ secrets.BITS_REPO_USERNAME }}
+          MAVEN_PASSWORD: ${{ secrets.BITS_REPO_PASSWORD }}
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
